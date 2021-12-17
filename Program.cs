@@ -70,7 +70,14 @@ namespace VimlikeBindings
                     e.Handled = true;
                 }
 
-                if(e.KeyEvent.KeyValue == 'x') // delete
+                if (e.KeyEvent.Key == Key.Enter) // enter
+                {
+                    // 'open' the item - in a real world case we presumably would change the text in textView too or something
+                    textView.FocusFirst();
+                    e.Handled = true;
+                }
+
+                if (e.KeyEvent.KeyValue == 'x') // delete
                 {
                     var idx = lv1.SelectedItem;
 
