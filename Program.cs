@@ -1,5 +1,6 @@
 ﻿
 
+using NStack;
 using System.Collections.Generic;
 using Terminal.Gui;
 
@@ -47,7 +48,8 @@ namespace VimlikeBindings
                 X = Pos.Percent(30) + 1,
                 Width = Dim.Percent(70),
                 Height = Dim.Fill(),
-                Text = "Some text",
+                Text = GetSomeLongText(),
+                WordWrap = true,
 
                 // start the text view in readonly mode so that navigation keybindings 
                 // will not enter text.  In Vim you have to hit Enter to modify the text
@@ -108,13 +110,32 @@ namespace VimlikeBindings
             // navigation keybindings - from textview to other controls
             textView.KeyDown += (e) =>
             {
-                if (e.KeyEvent.KeyValue == 'h') // left
+                if(textView.ReadOnly)
                 {
-                    if(textView.ReadOnly)
+                    if (e.KeyEvent.KeyValue == 'h') // left
                     {
                         lv1.FocusFirst();
                         e.Handled = true;
                     }
+                    if (e.KeyEvent.KeyValue == 'k') // up
+                    {
+                        var desiredTop = textView.TopRow - 1;
+
+                        // move the cursor to ensure it is on the screen after we scroll (prevents textview refusing to scroll down)
+                        textView.CursorPosition = new Point(textView.CursorPosition.X, Math.Min(textView.CursorPosition.Y, desiredTop));
+                        textView.ScrollTo(desiredTop);
+                        e.Handled = true;
+                    }
+                    if (e.KeyEvent.KeyValue == 'j') // down
+                    {
+                        var desiredTop = textView.TopRow + 1;
+
+                        // move the cursor to ensure it is on the screen after we scroll (prevents textview refusing to scroll down)
+                        textView.CursorPosition = new Point(textView.CursorPosition.X, Math.Max(textView.CursorPosition.Y,desiredTop));
+                        textView.ScrollTo(desiredTop);
+                        e.Handled = true;
+                    }
+
                 }
                 if(e.KeyEvent.Key == Key.Enter) // enter edit mode
                 {
@@ -137,6 +158,31 @@ namespace VimlikeBindings
             Application.Run();
             Application.Shutdown();
 
+        }
+
+        private static ustring GetSomeLongText()
+        {
+            return @"
+Terminal.Gui is a library intended to create console-based applications using C#. The framework has been designed to make it easy to write applications that will work on monochrome terminals, as well as modern color terminals with mouse support.
+
+This library works across Windows, Linux and MacOS.
+
+This library provides a text-based toolkit as works in a way similar to graphic toolkits. There are many controls that can be used to create your applications and it is event based, meaning that you create the user interface, hook up various events and then let the a processing loop run your application, and your code is invoked via one or more callbacks.
+
+The simplest application looks like this:
+
+using Terminal.Gui;
+
+[...]
+
+This example shows a prompt and returns an integer value depending on which value was selected by the user (Yes, No, or if they use chose not to make a decision and instead pressed the ESC key).
+
+More interesting user interfaces can be created by composing some of the various views that are included. In the following sections, you will see how applications are put together.
+
+In the example above, you can see that we have initialized the runtime by calling the Init method in the Application class - this sets up the environment, initializes the color schemes available for your application and clears the screen to start your application.
+
+The Application class, additionally creates an instance of the Toplevel class that is ready to be consumed, this instance is available in the Application.Top property, and can be used like this:
+";
         }
 
         /// <summary>
