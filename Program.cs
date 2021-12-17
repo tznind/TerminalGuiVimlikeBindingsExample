@@ -67,6 +67,27 @@ namespace VimlikeBindings
                     lv2.FocusFirst();
                     e.Handled = true;
                 }
+
+                if(e.KeyEvent.KeyValue == 'x') // delete
+                {
+                    var idx = lv1.SelectedItem;
+
+                    // cannot delete
+                    if (idx < 0 || idx >= lv1.Source.Length)
+                        return;
+
+                    // what are they trying to delete?
+                    var list = lv1.Source.ToList();
+                    var selected = list[idx];
+
+                    // confirm it
+                    if(YesNo("Delete",$"Delete {selected}?"))
+                    {
+                        // remove it
+                        list.Remove(selected);
+                        lv1.SetSource(list);
+                    }
+                }
             };
 
             // navigation keybindings - from lv2 to other controls
@@ -116,6 +137,57 @@ namespace VimlikeBindings
             Application.Run();
             Application.Shutdown();
 
+        }
+
+        /// <summary>
+        /// Poses a yes no question to the user using a modal dialog
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        private static bool YesNo(string title, string message)
+        {
+            bool answer = false;
+
+            var yes = new Button("Yes", true) { HotKey = Key.Y /* TODO: Requires user to hit Alt+Y */};
+            yes.Clicked += () =>
+            {
+                answer = true;
+                Application.RequestStop();
+            };
+
+            var no = new Button("No") { HotKey = Key.N /* TODO: Requires user to hit Alt+N */};
+            no.Clicked += () =>
+            {
+                answer = false;
+                Application.RequestStop();
+            };
+
+            var dlg = new Dialog(title, yes, no)
+            {
+                Height = 10,
+                Width = 20,
+            };
+
+            dlg.KeyDown += (e) =>
+            {
+                if (e.KeyEvent.KeyValue == 'y') // yes
+                {
+                    answer = true;
+                    e.Handled = true;
+                    Application.RequestStop();
+                }
+                if (e.KeyEvent.KeyValue == 'n') // no
+                {
+                    answer = false;
+                    e.Handled = true;
+                    Application.RequestStop();
+                }
+            };
+            dlg.Add(new Label(message));
+
+            Application.Run(dlg);
+
+            return answer;
         }
     }
 }
