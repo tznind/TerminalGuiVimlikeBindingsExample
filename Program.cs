@@ -56,20 +56,13 @@ namespace VimlikeBindings
                 ReadOnly = true,
             };
 
-            // navigation keybindings - from lv1 to other controls
+            // navigation keybindings
+            RegisterListViewHJKLBindings(lv1);
+            RegisterListViewHJKLBindings(lv2);
+
+            // Delete and Enter to activate
             lv1.KeyDown += (e) =>
             {
-                if (e.KeyEvent.KeyValue == 'l') // right
-                {
-                    textView.FocusFirst();
-                    e.Handled = true;
-                }
-                if (e.KeyEvent.KeyValue == 'j') // down
-                {
-                    lv2.FocusFirst();
-                    e.Handled = true;
-                }
-
                 if (e.KeyEvent.Key == Key.Enter) // enter
                 {
                     // 'open' the item - in a real world case we presumably would change the text in textView too or something
@@ -99,29 +92,59 @@ namespace VimlikeBindings
                 }
             };
 
-            // navigation keybindings - from lv2 to other controls
-            lv2.KeyDown += (e) =>
-            {
-                if (e.KeyEvent.KeyValue == 'l') // right
-                {
-                    textView.FocusFirst();
-                    e.Handled = true;
-                }
-                if (e.KeyEvent.KeyValue == 'k') // up
-                {
-                    lv1.FocusFirst();
-                    e.Handled = true;
-                }
-            };
-
             // navigation keybindings - from textview to other controls
+            RegisterListViewHJKLBindings(textView);
+
             textView.KeyDown += (e) =>
             {
-                if(textView.ReadOnly)
+                if(e.KeyEvent.Key == Key.Enter) // enter edit mode
                 {
+                    textView.ReadOnly = false;
+                    e.Handled = true;  // TODO: this does not seem to be respected (Enter still appears in control)
+                }
+
+                if (e.KeyEvent.Key == Key.Esc) // leave edit mode
+                {
+                    if(textView.ReadOnly)
+                    {
+                        // we are already in readonly mode so navigate back to lv1
+                        lv1.FocusFirst();
+                    }
+                    else
+                    {
+                        textView.ReadOnly = true;
+                        e.Handled = true;
+                    }
+                }
+            };
+            window.Add(lv1);
+            window.Add(lv2);
+            window.Add(textView);
+
+            Application.Top.Add(window);
+
+            Application.Run();
+            Application.Shutdown();
+
+        }
+
+        private static void RegisterListViewHJKLBindings(TextView textView)
+        {
+            textView.KeyDown += (e) =>
+            {
+                if (textView.ReadOnly)
+                {
+                    if (e.KeyEvent.KeyValue == 'l') // right
+                    {
+                        textView.SuperView.FocusNext();
+                        textView.SuperView.EnsureFocus();
+                        e.Handled = true;
+                    }
                     if (e.KeyEvent.KeyValue == 'h') // left
                     {
-                        lv1.FocusFirst();
+                        // TODO: this seems to break when on the first control
+                        textView.SuperView.FocusPrev();
+                        textView.SuperView.EnsureFocus();
                         e.Handled = true;
                     }
                     if (e.KeyEvent.KeyValue == 'k') // up
@@ -138,33 +161,42 @@ namespace VimlikeBindings
                         var desiredTop = textView.TopRow + 1;
 
                         // move the cursor to ensure it is on the screen after we scroll (prevents textview refusing to scroll down)
-                        textView.CursorPosition = new Point(textView.CursorPosition.X, Math.Max(textView.CursorPosition.Y,desiredTop));
+                        textView.CursorPosition = new Point(textView.CursorPosition.X, Math.Max(textView.CursorPosition.Y, desiredTop));
                         textView.ScrollTo(desiredTop);
                         e.Handled = true;
                     }
-
                 }
-                if(e.KeyEvent.Key == Key.Enter) // enter edit mode
+            };
+        }
+        private static void RegisterListViewHJKLBindings(ListView listview)
+        {
+            listview.KeyDown += (e) =>
+            {
+                if (e.KeyEvent.KeyValue == 'l') // right
                 {
-                    textView.ReadOnly = false;
-                    e.Handled = true;  // TODO: this does not seem to be respected (Enter still appears in control)
+                    listview.SuperView.FocusNext();
+                    listview.SuperView.EnsureFocus();
+                    e.Handled = true;
                 }
-
-                if (e.KeyEvent.Key == Key.Esc) // leave edit mode
+                if (e.KeyEvent.KeyValue == 'h') // left
                 {
-                    textView.ReadOnly = true;
+                    listview.SuperView.FocusPrev();
+                    listview.SuperView.EnsureFocus();
+                    e.Handled = true;
+                }
+                if (e.KeyEvent.KeyValue == 'j') // down
+                {
+                    listview.SelectedItem = Math.Max(0, Math.Min(listview.Source.Count - 1, listview.SelectedItem + 1));
+                    listview.SetNeedsDisplay();
+                    e.Handled = true;
+                }
+                if (e.KeyEvent.KeyValue == 'k') // up
+                {
+                    listview.SelectedItem = Math.Max(0, listview.SelectedItem - 1);
+                    listview.SetNeedsDisplay();
                     e.Handled = true;
                 }
             };
-            window.Add(lv1);
-            window.Add(lv2);
-            window.Add(textView);
-
-            Application.Top.Add(window);
-
-            Application.Run();
-            Application.Shutdown();
-
         }
 
         private static ustring GetSomeLongText()
